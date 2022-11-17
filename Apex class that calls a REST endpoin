@@ -1,0 +1,70 @@
+Create an Apex class that calls a REST endpoint and write a test class.
+Create an Apex class that calls a REST endpoint to return the name of an animal, write unit tests that achieve 100% code coverage for the class using a mock response, and run your Apex tests.
+
+Prework: Be sure the Remote Sites from the first unit are set up.
+Create an Apex class:
+Name: AnimalLocator
+Method name: getAnimalNameById
+The method must accept an Integer and return a String.
+The method must call https://th-apex-http-callout.herokuapp.com/animals/<id>, replacing <id> with the ID passed into the method 
+The method returns the value of the name property (i.e., the animal name)
+Create a test class:
+Name: AnimalLocatorTest
+The test class uses a mock class called AnimalLocatorMock to mock the callout response
+Create unit tests:
+Unit tests must cover all lines of code included in the AnimalLocator class, resulting in 100% code coverage
+Run your test class at least once (via Run All tests the Developer Console) before attempting to verify this challenge
+
+AnimalLocator apex class:
+
+public class AnimalLocator {
+    public static String getAnimalNameById(Integer id){ //String is the return type. Integer is the parameter that I need to pass here so id is the variable that I'm taking over here 
+    Http http = new Http(); //create an instance of http which will specify that is a rest api
+    HttpRequest request = new HttpRequest(); //request data from the end point so create an instance of http request which will request to get the data
+    request.setEndpoint('https://th-apex-http-callout.herokuapp.com/animals/'+id); //-this is api-fetch our data so endpoint is the url    
+    request.setMethod('GET'); //we're getting the data
+        
+        Map<String,Object> animal = new Map<String,Object>();
+        HttpResponse response = http.send(request);  //creating a variable response, it will store the data. when this api will be hit,store in this http response type of variable response     
+        if(response.getStatusCode() == 200){ //here we check is everything is ok. if code equals to 200 that means everything is fine and I'm getting my response
+            Map<String,Object> results = (Map<String,Object>)JSON.deserializeUntyped(response.getBody()); //we assign deserialized json string-this is response that we are hitting the api     
+            animal = (Map<String,Object>)results.get('animal');
+        }
+        return (String)animal.get('name'); 
+       } 
+    
+}
+
+
+AnimalLocatorTest class:
+
+@isTest
+private class AnimalLocatorTest {
+    @isTest static void animalLocatorMockTest(){
+        try{
+           Test.setMock(HttpCalloutMock.class,new AnimalLocatorMock());
+           String result = AnimalLocator.getAnimalNameById(1);
+           system.assertEquals(result, 'chicken');
+            
+        }
+        catch(exception e){
+            System.debug('Hey this exception has occured'+e.getMessage());
+        }
+    }
+
+}
+
+AnimalLocatorMock:
+
+@isTest
+global class AnimalLocatorMock implements HttpCalloutMock{
+    global HttpResponse respond(HttpRequest request){
+        HttpResponse response = new HttpResponse();
+        response.setHeader('Content-type', 'application/json');
+        response.setBody('{"animals":["majestic badger","fluffy bunny","scary bear","chicken"]}');
+        response.setStatusCode(200);
+        return response;
+    }
+    
+
+}
